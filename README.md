@@ -9,7 +9,7 @@ Simple studio para juego de michi, para probar un árbol de decisión como ejemp
 - Cada jugada es almacenada en memoria, en forma de un árbol de decisiones.
 - Si luego se le pregunta al juego por la siguiente jugada, éste puede revisar en la memoria cuál sería la mejor opción en base a la experiencia adquirida.
 
-# Status
+## Status
 
 - Registro de jugadas manuales.
 - Registro de jugadas al azar (random).
