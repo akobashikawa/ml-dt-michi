@@ -20,3 +20,5 @@ Simple studio para juego de michi, para probar un árbol de decisión como ejemp
 ## To Do
 
 - Mejorar el razonamiento para que el juego trate de ganar.
+- Entrenamiento automático.
+- Portar la idea al juego de Cuatro en Línea.
