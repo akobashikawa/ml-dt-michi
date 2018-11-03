@@ -87,19 +87,19 @@
         <table>
           <tbody>
             <tr>
-              <td><button class="btn" :class="cellStatus(1)" @click="play(1)">1</button></td>
-              <td><button class="btn" :class="cellStatus(2)" @click="play(2)">2</button></td>
-              <td><button class="btn" :class="cellStatus(3)" @click="play(3)">3</button></td>
+              <td><button class="btn" :class="cellClassName(1)" @click="play(1)">1</button></td>
+              <td><button class="btn" :class="cellClassName(2)" @click="play(2)">2</button></td>
+              <td><button class="btn" :class="cellClassName(3)" @click="play(3)">3</button></td>
             </tr>
             <tr>
-              <td><button class="btn" :class="cellStatus(4)" @click="play(4)">4</button></td>
-              <td><button class="btn" :class="cellStatus(5)" @click="play(5)">5</button></td>
-              <td><button class="btn" :class="cellStatus(6)" @click="play(6)">6</button></td>
+              <td><button class="btn" :class="cellClassName(4)" @click="play(4)">4</button></td>
+              <td><button class="btn" :class="cellClassName(5)" @click="play(5)">5</button></td>
+              <td><button class="btn" :class="cellClassName(6)" @click="play(6)">6</button></td>
             </tr>
             <tr>
-              <td><button class="btn" :class="cellStatus(7)" @click="play(7)">7</button></td>
-              <td><button class="btn" :class="cellStatus(8)" @click="play(8)">8</button></td>
-              <td><button class="btn" :class="cellStatus(9)" @click="play(9)">9</button></td>
+              <td><button class="btn" :class="cellClassName(7)" @click="play(7)">7</button></td>
+              <td><button class="btn" :class="cellClassName(8)" @click="play(8)">8</button></td>
+              <td><button class="btn" :class="cellClassName(9)" @click="play(9)">9</button></td>
             </tr>
           </tbody>
         </table>
@@ -107,6 +107,13 @@
         <div class="buttons mt-2">
           <button class="btn btn-warning btn-sm" @click="playRandom">Juega Random</button>
           <button class="btn btn-warning btn-sm" @click="playAI">Juega AI</button>
+        </div>
+
+        <div class="buttons mt-2">
+          <button class="btn btn-info btn-sm" @click="startTrainingRandom">Entrena Random</button>
+          <button class="btn btn-info btn-sm" @click="startTrainingAI">Entrena AI</button>
+          <span v-if="trainingMovs > 0">{{ trainingMovs }} movimientos</span>
+          <button class="btn btn-info btn-sm" @click="stopTraining">Detener entrenamiento</button>
         </div>
 
         <h3>Juego</h3>
@@ -117,6 +124,7 @@
 
         <h3>Ganador</h3>
         <code>{{winner}}</code>
+        <code>{{score}}</code>
 
         <div class="buttons mt-2">
           <button class="btn btn-primary btn-sm" @click="newGame">Nuevo juego</button>
@@ -164,21 +172,24 @@
       game: [],
       available: null,
       memory: [],
+      winner: null,
+      score: {x: 0, o: 0},
       currentMemoryList: null,
       finished: false,
+      training: false,
+      trainingMovs: 0,
+      minMovDelay: 1,
     },
     computed: {
       memoryMap: function() {
         let html = this.renderMemoryList(this.memory);
         return html;
       },
-      winner: function() {
-        return this.getWinner();
-      }
     },
     mounted: function() {
       this.currentMemoryList = this.memory;
       this.available = [...this.total];
+      this.winner = this.getWinner();
     },
     methods: {
       renderMemoryList: function(list) {
@@ -202,7 +213,7 @@
         html = `<pre>${JSON.stringify(list)}</pre>`
         return html;
       },
-      cellStatus: function (n) {
+      cellClassName: function (n) {
         const m = this.game.indexOf(n);
         if (m === -1) {
           return '';
@@ -216,9 +227,11 @@
         }
 
         if (this.winner.x.indexOf(n) != -1) {
+          console.log('x');
           result += ' winner-x';
         }
         if (this.winner.o.indexOf(n) != -1) {
+          console.log('o');
           result += ' winner-o';
         }
         return result;
@@ -266,6 +279,8 @@
       },
       getWinner: function() {
         const result = {x: [], o: []};
+
+        // separa
         const xs = [];
         const os = [];
         for (let i = 0; i < this.game.length; i++) {
@@ -277,14 +292,18 @@
           }
         }
         // console.log(xs, os);
+
+        // coteja
         for (let goal of this.goals) {
           // quita del goal cada item presente en el juego
           // si lo que queda es vacio, entonces goal
           if (goal.filter(n => xs.indexOf(n) == -1).length == 0) {
             result.x.push(...goal);
+            this.score.x++;
           }
           if (goal.filter(n => os.indexOf(n) == -1).length == 0) {
             result.o.push(...goal);
+            this.score.o++;
           }
         }
         return result;
@@ -292,26 +311,31 @@
 
       play: function(n) {
         if (this.finished) {
-          return;
+          return -1;
         }
         if (!this.isValid(n)) {
-          return;
+          return n;
         }
 
         this.addToGame(n);
         
         this.saveInMemory(n);
 
+        this.winner = this.getWinner();
+
         if (this.winner.x.length > 0
           || this.winner.o.length > 0) {
           this.saveVictory();
         }
+
+        return n;
       },
 
       chooseRandomNext: function () {
         const available = this.available;
         if (available.length == 0) {
           console.log('No hay jugada disponible');
+          this.finished = true;
           return -1;
         }
         const r = Math.floor(available.length * Math.random());
@@ -319,23 +343,27 @@
       },
       playRandom: function() {
         if (this.finished) {
-          return;
+          return -1;
         }
 
         const n = this.chooseRandomNext();
         
         if (!this.isValid(n)) {
-          return;
+          return n;
         }
 
         this.addToGame(n);
 
         this.saveInMemory(n);
 
+        this.winner = this.getWinner();
+
         if (this.winner.x.length > 0
           || this.winner.o.length > 0) {
           this.saveVictory();
         }
+
+        return n;
       },
 
       chooseAINext: function () {
@@ -364,22 +392,60 @@
       },
       playAI: function() {
         if (this.finished) {
-          return;
+          return -1;
         }
 
         const n = this.chooseAINext();
 
         if (!this.isValid(n)) {
-          return;
+          return n;
         }
 
         this.addToGame(n);
 
         this.saveInMemory(n);
 
+        this.winner = this.getWinner();
+
         if (this.winner.x.length > 0
           || this.winner.o.length > 0) {
           this.saveVictory();
+        }
+
+        return n;
+      },
+
+      startTrainingRandom: function() {
+        this.training = true;
+        this.trainingRandom();
+      },
+      startTrainingAI: function() {
+        this.training = true;
+        this.trainingAI();
+      },
+      stopTraining: function() {
+        this.training = false;
+      },
+
+      _trainingRandom: function() {
+        return new Promise((resolve, reject) => {
+          setTimeout(()=> {
+            const n = this.playRandom();
+            if (this.finished) {
+              this.newGame();
+            }
+            this.trainingMovs++;
+            resolve(n);
+          }, this.minMovDelay);
+        });
+      },
+      trainingRandom: async function() {
+        try {
+          while (this.training) {
+            const n = await this._trainingRandom();
+          }
+        } catch (error) {
+          console.log(error);          
         }
       }
 
