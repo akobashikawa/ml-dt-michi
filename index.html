@@ -365,6 +365,12 @@
       },
 
       chooseAINext: function () {
+        const available = this.available;
+        if (available.length == 0) {
+          console.log('No hay jugada disponible');
+          this.finished = true;
+          return -1;
+        }
         // los pesos multiplican las probabilidades de la opción
         // y hay que elegir al azar entre las opciones ya multiplicadas
         const weights = this.available.map(n => {
@@ -385,7 +391,7 @@
             break;
           }
         }
-        console.log({weights}, {weigthSum}, {choosed});
+        console.log({weigthSum}, {choosed});
         return choosed;
       },
       playAI: function() {
@@ -445,7 +451,29 @@
         } catch (error) {
           console.log(error);          
         }
-      }
+      },
+
+      _trainingAI: function() {
+        return new Promise((resolve, reject) => {
+          setTimeout(()=> {
+            const n = this.playAI();
+            if (this.finished) {
+              this.newGame();
+            }
+            this.trainingMovs++;
+            resolve(n);
+          }, this.minMovDelay);
+        });
+      },
+      trainingAI: async function() {
+        try {
+          while (this.training) {
+            const n = await this._trainingAI();
+          }
+        } catch (error) {
+          console.log(error);          
+        }
+      },
 
     },
   });
