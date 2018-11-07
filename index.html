@@ -110,8 +110,8 @@
         </div>
 
         <div class="buttons mt-2">
-          <button class="btn btn-info btn-sm" @click="startTrainingRandom">Entrena Random</button>
-          <button class="btn btn-info btn-sm" @click="startTrainingAI">Entrena AI</button>
+<button class="btn btn-info btn-sm" @click="startTrainingRandom" :disabled="training">Entrena Random</button>
+          <button class="btn btn-info btn-sm" @click="startTrainingAI" :disabled="training">Entrena AI</button>
           <span v-if="trainingMovs > 0">{{ trainingMovs }} movimientos</span>
           <button class="btn btn-info btn-sm" @click="stopTraining">Detener entrenamiento</button>
         </div>
