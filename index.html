@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,7 @@
     crossorigin="anonymous">
 
   <style>
-  .o {
+    .o {
     position: relative;
   }
   .o::before {
@@ -45,449 +46,502 @@
   .winner-o {
     background-color: rgba(0,0,255,0.3);
   }
+
+  svg {
+    background-color: #def;
+  }
+
+  .link {
+    fill: none;
+    stroke: #333;
+  }
+
+  .node {
+    stroke: #555;
+    fill: blue;
+    font-size: 10px;
+  }
+
   </style>
 </head>
+
 <body>
   <div id="app">
 
-  <header>
-    <div class="bg-dark" :class="{'collapse': collapse}">
+    <header>
+      <div class="bg-dark" :class="{'collapse': collapse}">
+        <div class="container">
+          <div class="row">
+            <div class="col-sm-8 col-md-7 py-4">
+              <h4 class="text-white">Acerca de mi</h4>
+              <p class="text-muted">Aprendo a jugar Michi. Me programó Rulo.</p>
+            </div>
+            <div class="col-sm-4 offset-md-1 py-4">
+              <h4 class="text-white">Contacto</h4>
+              <ul class="list-unstyled">
+                <li><a href="https://twitter.com/rulokoba" class="text-white">@rulokoba</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container d-flex justify-content-between">
+          <a href="#" class="navbar-brand d-flex align-items-center">
+            <strong># ML Michi Studio</strong>
+          </a>
+          <button class="navbar-toggler" type="button" @click="collapse=!collapse">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mt-3">
       <div class="container">
-        <div class="row">
-          <div class="col-sm-8 col-md-7 py-4">
-            <h4 class="text-white">Acerca de mi</h4>
-            <p class="text-muted">Aprendo a jugar Michi. Me programó Rulo.</p>
+
+        <div class="game border p-2">
+
+          <table>
+            <tbody>
+              <tr>
+                <td><button class="btn" :class="cellClassName(1)" @click="play(1)">1</button></td>
+                <td><button class="btn" :class="cellClassName(2)" @click="play(2)">2</button></td>
+                <td><button class="btn" :class="cellClassName(3)" @click="play(3)">3</button></td>
+              </tr>
+              <tr>
+                <td><button class="btn" :class="cellClassName(4)" @click="play(4)">4</button></td>
+                <td><button class="btn" :class="cellClassName(5)" @click="play(5)">5</button></td>
+                <td><button class="btn" :class="cellClassName(6)" @click="play(6)">6</button></td>
+              </tr>
+              <tr>
+                <td><button class="btn" :class="cellClassName(7)" @click="play(7)">7</button></td>
+                <td><button class="btn" :class="cellClassName(8)" @click="play(8)">8</button></td>
+                <td><button class="btn" :class="cellClassName(9)" @click="play(9)">9</button></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="buttons mt-2">
+            <button class="btn btn-warning btn-sm" @click="playRandom">Juega Random</button>
+            <button class="btn btn-warning btn-sm" @click="playAI">Juega AI</button>
           </div>
-          <div class="col-sm-4 offset-md-1 py-4">
-            <h4 class="text-white">Contacto</h4>
-            <ul class="list-unstyled">
-              <li><a href="https://twitter.com/rulokoba" class="text-white">@rulokoba</a></li>
-            </ul>
+
+          <div class="buttons mt-2">
+            <button class="btn btn-info btn-sm" @click="startTrainingRandom" :disabled="training">Entrena Random</button>
+            <button class="btn btn-info btn-sm" @click="startTrainingAI" :disabled="training">Entrena AI</button>
+            <span v-if="trainingMovs > 0">{{ trainingMovs }} movimientos</span>
+            <button class="btn btn-info btn-sm" @click="stopTraining">Detener entrenamiento</button>
+          </div>
+
+          <h3>Juego</h3>
+          <code>{{game}}</code>
+
+          <h3>Disponible</h3>
+          <code>{{available}}</code>
+
+          <h3>Ganador</h3>
+          <code>{{winner}}</code>
+          <code>{{score}}</code>
+
+          <div class="buttons mt-2">
+            <button class="btn btn-primary btn-sm" @click="newGame">Nuevo juego</button>
           </div>
         </div>
-      </div>
-    </div>
-    <div class="navbar navbar-dark bg-dark shadow-sm">
-      <div class="container d-flex justify-content-between">
-        <a href="#" class="navbar-brand d-flex align-items-center">
-          <strong># ML Michi Studio</strong>
-        </a>
-        <button class="navbar-toggler" type="button" @click="collapse=!collapse">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-      </div>
-    </div>
-  </header>
 
-  <main class="mt-3">
-    <div class="container">
-
-      <div class="game border p-2">
-
-        <table>
-          <tbody>
-            <tr>
-              <td><button class="btn" :class="cellClassName(1)" @click="play(1)">1</button></td>
-              <td><button class="btn" :class="cellClassName(2)" @click="play(2)">2</button></td>
-              <td><button class="btn" :class="cellClassName(3)" @click="play(3)">3</button></td>
-            </tr>
-            <tr>
-              <td><button class="btn" :class="cellClassName(4)" @click="play(4)">4</button></td>
-              <td><button class="btn" :class="cellClassName(5)" @click="play(5)">5</button></td>
-              <td><button class="btn" :class="cellClassName(6)" @click="play(6)">6</button></td>
-            </tr>
-            <tr>
-              <td><button class="btn" :class="cellClassName(7)" @click="play(7)">7</button></td>
-              <td><button class="btn" :class="cellClassName(8)" @click="play(8)">8</button></td>
-              <td><button class="btn" :class="cellClassName(9)" @click="play(9)">9</button></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="buttons mt-2">
-          <button class="btn btn-warning btn-sm" @click="playRandom">Juega Random</button>
-          <button class="btn btn-warning btn-sm" @click="playAI">Juega AI</button>
+        <div class="memory border p-2 mt-1">
+          <h3>Memoria</h3>
+          <div class="tree">
+            <svg width="100%" height="600" ref="svg">
+              <g transform="translate(0, 10)">
+                <g class="nodes">
+                  <g v-for="node of nodes" :transform="`translate(${node.x}, ${node.y})`" class="node">
+                    <circle cx="0" cy="0" r="4"></circle><text dx="10" dy="3">{{ node.data.name }}</text>
+                  </g>
+                </g>
+                <g class="links">
+                  <line v-for="link of links" class="link" :x1="link.source.x" :y1="link.source.y" :x2="link.target.x" :y2="link.target.y"></line>
+                </g>
+              </g>
+            </svg>
+          </div>
         </div>
 
-        <div class="buttons mt-2">
-<button class="btn btn-info btn-sm" @click="startTrainingRandom" :disabled="training">Entrena Random</button>
-          <button class="btn btn-info btn-sm" @click="startTrainingAI" :disabled="training">Entrena AI</button>
-          <span v-if="trainingMovs > 0">{{ trainingMovs }} movimientos</span>
-          <button class="btn btn-info btn-sm" @click="stopTraining">Detener entrenamiento</button>
-        </div>
-
-        <h3>Juego</h3>
-        <code>{{game}}</code>
-        
-        <h3>Disponible</h3>
-        <code>{{available}}</code>
-
-        <h3>Ganador</h3>
-        <code>{{winner}}</code>
-        <code>{{score}}</code>
-
-        <div class="buttons mt-2">
-          <button class="btn btn-primary btn-sm" @click="newGame">Nuevo juego</button>
-        </div>
       </div>
+    </main>
 
-      <div class="memory border p-2 mt-1">
-        <h3>Memoria</h3>
-        <div v-html="memoryMap"></div>
-        <pre>{{memory}}</pre>
+    <footer class="text-muted">
+      <div class="container-fluid">
+        <hr>
+        <small>Michi</small>
       </div>
-
-    </div>
-  </main>
-
-  <footer class="text-muted">
-    <div class="container-fluid">
-      <hr>
-      <small>Michi</small>
-    </div>
-  </footer>
+    </footer>
 
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
 
   <script>
-  const app = new Vue({
-    el: '#app',
-    data: {
-      collapse: true,
+    const app = new Vue({
+      el: '#app',
+      data: {
+        collapse: true,
 
-      weightFactor: 10,
-      total: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-      goals: [
-        [1, 2, 3],
-        [1, 4, 7],
-        [1, 5, 9],
-        [2, 5, 8],
-        [3, 5, 7],
-        [3, 6, 9],
-        [4, 5, 6],
-        [7, 8, 9],
-      ],
-      game: [],
-      available: null,
-      memory: [],
-      winner: null,
-      score: {x: 0, o: 0},
-      gparentMemoryList: null,
-      parentMemoryList: null,
-      currentMemoryList: null,
-      finished: false,
-      training: false,
-      trainingMovs: 0,
-      minMovDelay: 1,
-    },
-    computed: {
-      memoryMap: function() {
-        let html = this.renderMemoryList(this.memory);
-        return html;
+        weightFactor: 10,
+        total: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        goals: [
+          [1, 2, 3],
+          [1, 4, 7],
+          [1, 5, 9],
+          [2, 5, 8],
+          [3, 5, 7],
+          [3, 6, 9],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
+        game: [],
+        available: null,
+        memory: [],
+        winner: null,
+        score: { x: 0, o: 0 },
+        gparentMemoryList: null,
+        parentMemoryList: null,
+        currentMemoryList: null,
+        finished: false,
+        training: false,
+        trainingMovs: 0,
+        minMovDelay: 1,
+
+        layout: null,
       },
-    },
-    mounted: function() {
-      this.newGame();
-      this.winner = this.getWinner();
-    },
-    methods: {
-      renderMemoryList: function(list) {
-        let html = '';
-        if (list && list.length > 0) {
-          html = `<ul>`;
-          for (let item of list) {
-            html += `<li>`;
-            html += `${item.name} <small>(${item.weight})</small>`;
-            if (item.children) {
-              html += this.renderMemoryList(item.children);
-            }
-            html += `</li>`;
+      computed: {
+        root: function() {
+          if (typeof this.layout != 'function') {
+            return null;
           }
-          html += `</ul>`;
-        }
-        return html;
-      },
-      renderGameMap: function(list) {
-        let html;
-        html = `<pre>${JSON.stringify(list)}</pre>`
-        return html;
-      },
-      cellClassName: function (n) {
-        const m = this.game.indexOf(n);
-        if (m === -1) {
-          return '';
-        }
-
-        let result = '';
-        if (m % 2 === 0) {
-          result += 'x';
-        } else {
-          result += 'o';
-        }
-
-        if (this.winner.x.indexOf(n) != -1) {
-          result += ' winner-x';
-        }
-        if (this.winner.o.indexOf(n) != -1) {
-          result += ' winner-o';
-        }
-        return result;
-      },
-
-      isValid: function(n) {
-        return this.available.indexOf(n) != -1;
-      },
-      addToGame: function (n) {
-        this.available.splice(this.available.indexOf(n), 1);
-        this.game.push(n);
-      },
-
-      isGameInMemory: function() {
-        return false;
-      },
-      saveInMemory: function(n) {
-        let list = this.currentMemoryList;
-        const found = list.find(x => x.name === n);
-        this.gparentMemoryList = this.parentMemoryList;
-        this.parentMemoryList = this.currentMemoryList;
-        if (!found) {
-          const newItem = {
-            name: n,
-            weight: 1,
-            children: []
+          const data = {
+            name: '/',
+            children: this.memory
           };
-          list.push(newItem);
-          this.currentMemoryList = newItem.children;
-        } else {
-          found.weight = found.weight + 1;
-          this.currentMemoryList = found.children;
-        }
+          const root = d3.hierarchy(data);
+          this.layout(root);
+          return root;
+        },
+        nodes: function() {
+          if (!this.root) {
+            return [];
+          }
+          const nodes = this.root.descendants();
+          // console.log(nodes);
+          return nodes;
+        },
+        links: function() {
+          if (!this.root) {
+            return [];
+          }
+          const links = this.root.links();
+          // console.log(links);
+          return links;
+        },
       },
-      isGameFinished: function() {
-        return false;
+      mounted: function () {
+        this.newGame();
+        this.winner = this.getWinner();
+        this.layout = this.updateLayout();
       },
-      newGame: function() {
-        this.game = [];
-        this.available = [...this.total];
-        this.finished = false;
-        this.parentMemoryList = this.memory;
-        this.currentMemoryList = this.memory;
-      },
-      saveVictory: function(n) {
-        for (item of this.gparentMemoryList) {
-          item.weight /= 2;
-        }
-        for (item of this.parentMemoryList) {
-          item.weight *= 2;
-        }
-        this.saveInMemory('*');
-        this.finished = true;
-      },
-      getWinner: function() {
-        const result = {x: [], o: []};
+      methods: {
+        pr: function(x) {
+          return JSON.parse(JSON.stringify(x));
+        },
+        updateLayout: function () {
+          console.log(this.$refs);
+          console.log(this.$refs.svg.clientHeight);
+          const width = this.$refs.svg.clientWidth;
+          const height = this.$refs.svg.clientHeight;
+          return d3.tree().size([width - 20, height - 20]);
+        },
+        renderGameMap: function (list) {
+          let html;
+          html = `<pre>${JSON.stringify(list)}</pre>`
+          return html;
+        },
+        cellClassName: function (n) {
+          const m = this.game.indexOf(n);
+          if (m === -1) {
+            return '';
+          }
 
-        // separa
-        const xs = [];
-        const os = [];
-        for (let i = 0; i < this.game.length; i++) {
-          const n = this.game[i];
-          if (i % 2 == 0) {
-            xs.push(n);
+          let result = '';
+          if (m % 2 === 0) {
+            result += 'x';
           } else {
-            os.push(n);
+            result += 'o';
           }
-        }
-        // console.log(xs, os);
 
-        // coteja
-        for (let goal of this.goals) {
-          // quita del goal cada item presente en el juego
-          // si lo que queda es vacio, entonces goal
-          if (goal.filter(n => xs.indexOf(n) == -1).length == 0) {
-            result.x.push(...goal);
-            this.score.x++;
+          if (this.winner.x.indexOf(n) != -1) {
+            result += ' winner-x';
           }
-          if (goal.filter(n => os.indexOf(n) == -1).length == 0) {
-            result.o.push(...goal);
-            this.score.o++;
+          if (this.winner.o.indexOf(n) != -1) {
+            result += ' winner-o';
           }
-        }
-        return result;
-      },
+          return result;
+        },
 
-      play: function(n) {
-        if (this.finished) {
-          return -1;
-        }
-        if (!this.isValid(n)) {
-          return n;
-        }
+        isValid: function (n) {
+          return this.available.indexOf(n) != -1;
+        },
+        addToGame: function (n) {
+          this.available.splice(this.available.indexOf(n), 1);
+          this.game.push(n);
+        },
 
-        this.addToGame(n);
-        
-        this.saveInMemory(n);
-
-        this.winner = this.getWinner();
-
-        if (this.winner.x.length > 0
-          || this.winner.o.length > 0) {
-          this.saveVictory(n);
-        }
-
-        return n;
-      },
-
-      chooseRandomNext: function () {
-        const available = this.available;
-        if (available.length == 0) {
-          console.log('No hay jugada disponible');
-          this.finished = true;
-          return -1;
-        }
-        const r = Math.floor(available.length * Math.random());
-        return available[r];
-      },
-      playRandom: function() {
-        if (this.finished) {
-          return -1;
-        }
-
-        const n = this.chooseRandomNext();
-        
-        if (!this.isValid(n)) {
-          return n;
-        }
-
-        this.addToGame(n);
-
-        this.saveInMemory(n);
-
-        this.winner = this.getWinner();
-
-        if (this.winner.x.length > 0
-          || this.winner.o.length > 0) {
-          this.saveVictory(n);
-        }
-
-        return n;
-      },
-
-      chooseAINext: function () {
-        const available = this.available;
-        if (available.length == 0) {
-          console.log('No hay jugada disponible');
-          this.finished = true;
-          return -1;
-        }
-        // azar
-        // los pesos multiplican las probabilidades de la opción
-        // y hay que elegir al azar entre las opciones ya multiplicadas
-        const weights = this.available.map(n => {
-          const found = this.currentMemoryList.find(m => m.name == n);
-          if (found) {
-            return found.weight;
+        isGameInMemory: function () {
+          return false;
+        },
+        saveInMemory: function (n) {
+          let list = this.currentMemoryList;
+          const found = list.find(x => x.name === n);
+          this.gparentMemoryList = this.parentMemoryList;
+          this.parentMemoryList = this.currentMemoryList;
+          if (!found) {
+            const newItem = {
+              name: n,
+              weight: 1,
+              children: []
+            };
+            list.push(newItem);
+            this.currentMemoryList = newItem.children;
           } else {
-            return 1;
+            found.weight = found.weight + 1;
+            this.currentMemoryList = found.children;
           }
-        });
-        const weigthsSum = weights.reduce((ac, n) => ac += n, 0);
-        const randomV = Math.random() * weigthsSum;
-        let choosed;
-        for (let i = 0, w = 0; i < weights.length; i++) {
-          w += weights[i];
-          if (w > randomV) {
-            choosed = this.available[i];
-            break;
+          // console.log(this.pr(this.memory));
+        },
+        isGameFinished: function () {
+          return false;
+        },
+        newGame: function () {
+          this.game = [];
+          this.available = [...this.total];
+          this.finished = false;
+          this.parentMemoryList = this.memory;
+          this.currentMemoryList = this.memory;
+        },
+        saveVictory: function (n) {
+          for (item of this.gparentMemoryList) {
+            item.weight /= 2;
           }
-        }
-        console.log({weigthsSum, randomV, choosed});
-        return choosed;
-      },
-      playAI: function() {
-        if (this.finished) {
-          return -1;
-        }
+          for (item of this.parentMemoryList) {
+            item.weight *= 2;
+          }
+          this.saveInMemory('*');
+          this.finished = true;
+        },
+        getWinner: function () {
+          const result = { x: [], o: [] };
 
-        const n = this.chooseAINext();
+          // separa
+          const xs = [];
+          const os = [];
+          for (let i = 0; i < this.game.length; i++) {
+            const n = this.game[i];
+            if (i % 2 == 0) {
+              xs.push(n);
+            } else {
+              os.push(n);
+            }
+          }
+          // console.log(xs, os);
 
-        if (!this.isValid(n)) {
+          // coteja
+          for (let goal of this.goals) {
+            // quita del goal cada item presente en el juego
+            // si lo que queda es vacio, entonces goal
+            if (goal.filter(n => xs.indexOf(n) == -1).length == 0) {
+              result.x.push(...goal);
+              this.score.x++;
+            }
+            if (goal.filter(n => os.indexOf(n) == -1).length == 0) {
+              result.o.push(...goal);
+              this.score.o++;
+            }
+          }
+          return result;
+        },
+
+        play: function (n) {
+          if (this.finished) {
+            return -1;
+          }
+          if (!this.isValid(n)) {
+            return n;
+          }
+
+          this.addToGame(n);
+
+          this.saveInMemory(n);
+
+          this.winner = this.getWinner();
+
+          if (this.winner.x.length > 0
+            || this.winner.o.length > 0) {
+            this.saveVictory(n);
+          }
+
           return n;
-        }
+        },
 
-        this.addToGame(n);
-
-        this.saveInMemory(n);
-
-        this.winner = this.getWinner();
-
-        if (this.winner.x.length > 0
-          || this.winner.o.length > 0) {
-          this.saveVictory(n);
-        }
-
-        return n;
-      },
-
-      startTrainingRandom: function() {
-        this.training = true;
-        this.trainingRandom();
-      },
-      startTrainingAI: function() {
-        this.training = true;
-        this.trainingAI();
-      },
-      stopTraining: function() {
-        this.training = false;
-      },
-
-      _trainingRandom: function() {
-        return new Promise((resolve, reject) => {
-          setTimeout(()=> {
-            const n = this.playRandom();
-            if (this.finished) {
-              this.newGame();
-            }
-            this.trainingMovs++;
-            resolve(n);
-          }, this.minMovDelay);
-        });
-      },
-      trainingRandom: async function() {
-        try {
-          while (this.training) {
-            const n = await this._trainingRandom();
+        chooseRandomNext: function () {
+          const available = this.available;
+          if (available.length == 0) {
+            console.log('No hay jugada disponible');
+            this.finished = true;
+            return -1;
           }
-        } catch (error) {
-          console.log(error);          
-        }
-      },
-
-      _trainingAI: function() {
-        return new Promise((resolve, reject) => {
-          setTimeout(()=> {
-            const n = this.playAI();
-            if (this.finished) {
-              this.newGame();
-            }
-            this.trainingMovs++;
-            resolve(n);
-          }, this.minMovDelay);
-        });
-      },
-      trainingAI: async function() {
-        try {
-          while (this.training) {
-            const n = await this._trainingAI();
+          const r = Math.floor(available.length * Math.random());
+          return available[r];
+        },
+        playRandom: function () {
+          if (this.finished) {
+            return -1;
           }
-        } catch (error) {
-          console.log(error);          
-        }
-      },
 
-    },
-  });
+          const n = this.chooseRandomNext();
+
+          if (!this.isValid(n)) {
+            return n;
+          }
+
+          this.addToGame(n);
+
+          this.saveInMemory(n);
+
+          this.winner = this.getWinner();
+
+          if (this.winner.x.length > 0
+            || this.winner.o.length > 0) {
+            this.saveVictory(n);
+          }
+
+          return n;
+        },
+
+        chooseAINext: function () {
+          const available = this.available;
+          if (available.length == 0) {
+            console.log('No hay jugada disponible');
+            this.finished = true;
+            return -1;
+          }
+          // azar
+          // los pesos multiplican las probabilidades de la opción
+          // y hay que elegir al azar entre las opciones ya multiplicadas
+          const weights = this.available.map(n => {
+            const found = this.currentMemoryList.find(m => m.name == n);
+            if (found) {
+              return found.weight;
+            } else {
+              return 1;
+            }
+          });
+          const weigthsSum = weights.reduce((ac, n) => ac += n, 0);
+          const randomV = Math.random() * weigthsSum;
+          let choosed;
+          for (let i = 0, w = 0; i < weights.length; i++) {
+            w += weights[i];
+            if (w > randomV) {
+              choosed = this.available[i];
+              break;
+            }
+          }
+          // console.log({ weigthsSum, randomV, choosed });
+          return choosed;
+        },
+        playAI: function () {
+          if (this.finished) {
+            return -1;
+          }
+
+          const n = this.chooseAINext();
+
+          if (!this.isValid(n)) {
+            return n;
+          }
+
+          this.addToGame(n);
+
+          this.saveInMemory(n);
+
+          this.winner = this.getWinner();
+
+          if (this.winner.x.length > 0
+            || this.winner.o.length > 0) {
+            this.saveVictory(n);
+          }
+
+          return n;
+        },
+
+        startTrainingRandom: function () {
+          this.training = true;
+          this.trainingRandom();
+        },
+        startTrainingAI: function () {
+          this.training = true;
+          this.trainingAI();
+        },
+        stopTraining: function () {
+          this.training = false;
+        },
+
+        _trainingRandom: function () {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              const n = this.playRandom();
+              if (this.finished) {
+                this.newGame();
+              }
+              this.trainingMovs++;
+              resolve(n);
+            }, this.minMovDelay);
+          });
+        },
+        trainingRandom: async function () {
+          try {
+            while (this.training) {
+              const n = await this._trainingRandom();
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        },
+
+        _trainingAI: function () {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              const n = this.playAI();
+              if (this.finished) {
+                this.newGame();
+              }
+              this.trainingMovs++;
+              resolve(n);
+            }, this.minMovDelay);
+          });
+        },
+        trainingAI: async function () {
+          try {
+            while (this.training) {
+              const n = await this._trainingAI();
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        },
+
+      },
+    });
   </script>
 </body>
+
 </html>
