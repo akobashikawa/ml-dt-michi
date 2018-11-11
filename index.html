@@ -48,7 +48,7 @@
   }
 
   svg {
-    background-color: #def;
+    /* background-color: #def; */
   }
 
   .link {
@@ -255,8 +255,6 @@
           return JSON.parse(JSON.stringify(x));
         },
         updateLayout: function () {
-          console.log(this.$refs);
-          console.log(this.$refs.svg.clientHeight);
           const width = this.$refs.svg.clientWidth;
           const height = this.$refs.svg.clientHeight;
           return d3.tree().size([width - 20, height - 20]);
