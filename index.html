@@ -50,14 +50,31 @@
     /* background-color: #def; */
   }
 
-  .link {
+  .d3-tree .link {
     fill: none;
     stroke: #333;
   }
 
-  .node {
-    stroke: #555;
-    fill: blue;
+  .d3-tree .node {
+    stroke: none;
+    fill: rgba(0,0,255,0.6);
+    font-size: 10px;
+  }
+
+  .d3-treemap .link {
+    fill: none;
+    stroke: #333;
+  }
+
+  .d3-treemap .border {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: #aaa;
+  }
+
+  .d3-treemap .node {
+    stroke: rgba(255,255,255, 0.6);
+    fill: rgba(0, 0, 255, 0.2);
     font-size: 10px;
   }
 
@@ -151,7 +168,8 @@
         <div class="memory border p-2 mt-1">
           <h3>Memoria</h3>
 
-          <d3-tree :data="memory"></d3-tree>
+          <d3-tree :data="memory" width="100%" height="300"></d3-tree>
+          <d3-treemap :data="memory" width="100%" height="300"></d3-treemap>
         </div>
 
       </div>
@@ -177,7 +195,7 @@
           layout: null
         }
       },
-      props: ['data'],
+      props: ['data', 'width', 'height'],
       computed: {
         root: function () {
           if (typeof this.layout != 'function') {
@@ -220,11 +238,76 @@
         },
       },
       template: `<div class="d3-tree">
-            <svg width="100%" height="600" ref="svg">
+            <svg :width="width" :height="height" ref="svg">
               <g transform="translate(0, 10)">
                 <g class="nodes">
                   <g v-for="node of nodes" :transform="'translate(' + node.x + ', ' + node.y + ')'" class="node">
                     <circle cx="0" cy="0" r="4"></circle><text dx="10" dy="3">{{ node.data.name }}</text>
+                  </g>
+                </g>
+                <g class="links">
+                  <line v-for="link of links" class="link" :x1="link.source.x" :y1="link.source.y" :x2="link.target.x" :y2="link.target.y"></line>
+                </g>
+              </g>
+            </svg>
+          </div>`
+    });
+
+    Vue.component('d3-treemap', {
+      data: function () {
+        return {
+          layout: null
+        }
+      },
+      props: ['data', 'width', 'height'],
+      computed: {
+        root: function () {
+          if (typeof this.layout != 'function') {
+            return null;
+          }
+          const data = {
+            name: '/',
+            children: this.data
+          };
+          const root = d3.hierarchy(data);
+          root.sum(d => d.weight);
+          this.layout(root);
+          return root;
+        },
+        nodes: function () {
+          if (!this.root) {
+            return [];
+          }
+          const nodes = this.root.descendants();
+          // console.log(nodes);
+          return nodes;
+        },
+        links: function () {
+          if (!this.root) {
+            return [];
+          }
+          const links = this.root.links();
+          // console.log(links);
+          return links;
+        },
+      },
+      mounted: function () {
+        this.layout = this.updateLayout();
+
+      },
+      methods: {
+        updateLayout: function () {
+          const width = this.$refs.svg.clientWidth;
+          const height = this.$refs.svg.clientHeight;
+          return d3.treemap().size([width - 20, height - 20]).paddingOuter(15);
+        },
+      },
+      template: `<div class="d3-treemap">
+            <svg :width="width" :height="height" ref="svg">
+              <g transform="translate(0, 10)">
+                <g class="nodes">
+                  <g v-for="node of nodes" :transform="'translate(' + node.x0 + ', ' + node.y0 + ')'" class="node">
+                    <rect :width="node.x1 - node.x0" :height="node.y1 - node.y0"></rect><text dx="10" dy="10">{{ node.data.name }}</text>
                   </g>
                 </g>
                 <g class="links">
