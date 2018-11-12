@@ -61,10 +61,6 @@
     font-size: 10px;
   }
 
-  .d3-treemap .link {
-    fill: none;
-    stroke: #333;
-  }
 
   .d3-treemap .border {
     fill: none;
@@ -74,7 +70,20 @@
 
   .d3-treemap .node {
     stroke: rgba(255,255,255, 0.6);
-    fill: rgba(0, 0, 255, 0.2);
+    fill: rgba(0, 155, 0, 0.2);
+    font-size: 10px;
+  }
+
+
+  .d3-pack .border {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: #aaa;
+  }
+
+  .d3-pack .node {
+    stroke: rgba(255,255,255, 0.6);
+    fill: rgba(255, 0, 0, 0.2);
     font-size: 10px;
   }
 
@@ -170,6 +179,7 @@
 
           <d3-tree :data="memory" width="100%" height="300"></d3-tree>
           <d3-treemap :data="memory" width="100%" height="300"></d3-treemap>
+          <d3-pack :data="memory" width="100%" height="300"></d3-pack>
         </div>
 
       </div>
@@ -267,10 +277,12 @@
           }
           const data = {
             name: '/',
-            children: this.data
+            children: this.data,
+            value: 0
           };
           const root = d3.hierarchy(data);
           root.sum(d => d.weight);
+          // console.log(root);
           this.layout(root);
           return root;
         },
@@ -310,8 +322,69 @@
                     <rect :width="node.x1 - node.x0" :height="node.y1 - node.y0"></rect><text dx="10" dy="10">{{ node.data.name }}</text>
                   </g>
                 </g>
-                <g class="links">
-                  <line v-for="link of links" class="link" :x1="link.source.x" :y1="link.source.y" :x2="link.target.x" :y2="link.target.y"></line>
+              </g>
+            </svg>
+          </div>`
+    });
+
+    Vue.component('d3-pack', {
+      data: function () {
+        return {
+          layout: null
+        }
+      },
+      props: ['data', 'width', 'height'],
+      computed: {
+        root: function () {
+          if (typeof this.layout != 'function') {
+            return null;
+          }
+          const data = {
+            name: '/',
+            children: this.data,
+            value: 0
+          };
+          const root = d3.hierarchy(data);
+          root.sum(d => d.weight);
+          this.layout(root);
+          // console.log(root);
+          return root;
+        },
+        nodes: function () {
+          if (!this.root) {
+            return [];
+          }
+          const nodes = this.root.descendants();
+          // console.log(nodes);
+          return nodes;
+        },
+        links: function () {
+          if (!this.root) {
+            return [];
+          }
+          const links = this.root.links();
+          // console.log(links);
+          return links;
+        },
+      },
+      mounted: function () {
+        this.layout = this.updateLayout();
+
+      },
+      methods: {
+        updateLayout: function () {
+          const width = this.$refs.svg.clientWidth;
+          const height = this.$refs.svg.clientHeight;
+          return d3.pack().size([width - 20, height - 20]);
+        },
+      },
+      template: `<div class="d3-pack">
+            <svg :width="width" :height="height" ref="svg">
+              <g transform="translate(0, 10)">
+                <g class="nodes">
+                  <g v-for="node of nodes" :transform="'translate(' + node.x + ', ' + node.y + ')'" class="node">
+                    <circle cx="0" cy="0" :r="node.r ? node.r : 0"></circle><text dx="-5" dy="5">{{ node.data.name }}</text>
+                  </g>
                 </g>
               </g>
             </svg>
