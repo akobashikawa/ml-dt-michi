@@ -6,8 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>ML Michi Studio</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
-    crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
   <style>
     .o {
@@ -151,20 +150,8 @@
 
         <div class="memory border p-2 mt-1">
           <h3>Memoria</h3>
-          <div class="tree">
-            <svg width="100%" height="600" ref="svg">
-              <g transform="translate(0, 10)">
-                <g class="nodes">
-                  <g v-for="node of nodes" :transform="`translate(${node.x}, ${node.y})`" class="node">
-                    <circle cx="0" cy="0" r="4"></circle><text dx="10" dy="3">{{ node.data.name }}</text>
-                  </g>
-                </g>
-                <g class="links">
-                  <line v-for="link of links" class="link" :x1="link.source.x" :y1="link.source.y" :x2="link.target.x" :y2="link.target.y"></line>
-                </g>
-              </g>
-            </svg>
-          </div>
+
+          <d3-tree :data="memory"></d3-tree>
         </div>
 
       </div>
@@ -183,6 +170,71 @@
   <script src="https://d3js.org/d3.v5.min.js"></script>
 
   <script>
+
+    Vue.component('d3-tree', {
+      data: function () {
+        return {
+          layout: null
+        }
+      },
+      props: ['data'],
+      computed: {
+        root: function () {
+          if (typeof this.layout != 'function') {
+            return null;
+          }
+          const data = {
+            name: '/',
+            children: this.data
+          };
+          const root = d3.hierarchy(data);
+          this.layout(root);
+          return root;
+        },
+        nodes: function () {
+          if (!this.root) {
+            return [];
+          }
+          const nodes = this.root.descendants();
+          // console.log(nodes);
+          return nodes;
+        },
+        links: function () {
+          if (!this.root) {
+            return [];
+          }
+          const links = this.root.links();
+          // console.log(links);
+          return links;
+        },
+      },
+      mounted: function () {
+        this.layout = this.updateLayout();
+
+      },
+      methods: {
+        updateLayout: function () {
+          const width = this.$refs.svg.clientWidth;
+          const height = this.$refs.svg.clientHeight;
+          return d3.tree().size([width - 20, height - 20]);
+        },
+      },
+      template: `<div class="d3-tree">
+            <svg width="100%" height="600" ref="svg">
+              <g transform="translate(0, 10)">
+                <g class="nodes">
+                  <g v-for="node of nodes" :transform="'translate(' + node.x + ', ' + node.y + ')'" class="node">
+                    <circle cx="0" cy="0" r="4"></circle><text dx="10" dy="3">{{ node.data.name }}</text>
+                  </g>
+                </g>
+                <g class="links">
+                  <line v-for="link of links" class="link" :x1="link.source.x" :y1="link.source.y" :x2="link.target.x" :y2="link.target.y"></line>
+                </g>
+              </g>
+            </svg>
+          </div>`
+    });
+
     const app = new Vue({
       el: '#app',
       data: {
@@ -216,48 +268,14 @@
         layout: null,
       },
       computed: {
-        root: function() {
-          if (typeof this.layout != 'function') {
-            return null;
-          }
-          const data = {
-            name: '/',
-            children: this.memory
-          };
-          const root = d3.hierarchy(data);
-          this.layout(root);
-          return root;
-        },
-        nodes: function() {
-          if (!this.root) {
-            return [];
-          }
-          const nodes = this.root.descendants();
-          // console.log(nodes);
-          return nodes;
-        },
-        links: function() {
-          if (!this.root) {
-            return [];
-          }
-          const links = this.root.links();
-          // console.log(links);
-          return links;
-        },
       },
       mounted: function () {
         this.newGame();
         this.winner = this.getWinner();
-        this.layout = this.updateLayout();
       },
       methods: {
-        pr: function(x) {
+        pr: function (x) {
           return JSON.parse(JSON.stringify(x));
-        },
-        updateLayout: function () {
-          const width = this.$refs.svg.clientWidth;
-          const height = this.$refs.svg.clientHeight;
-          return d3.tree().size([width - 20, height - 20]);
         },
         renderGameMap: function (list) {
           let html;
