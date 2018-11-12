@@ -503,7 +503,7 @@
             list.push(newItem);
             this.currentMemoryList = newItem.children;
           } else {
-            found.weight = found.weight + 1;
+            found.weight = found.weight * 2;
             this.currentMemoryList = found.children;
           }
           // console.log(this.pr(this.memory));
@@ -515,6 +515,7 @@
           this.game = [];
           this.available = [...this.total];
           this.finished = false;
+          this.gparentMemoryList = this.memory;
           this.parentMemoryList = this.memory;
           this.currentMemoryList = this.memory;
         },
