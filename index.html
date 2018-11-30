@@ -680,14 +680,10 @@
           this.training = false;
         },
 
-        _trainingRandom: function () {
+        aPlayRandom: function () {
           return new Promise((resolve, reject) => {
             setTimeout(() => {
               const n = this.playRandom();
-              if (this.finished) {
-                this.newGame();
-              }
-              this.trainingMovs++;
               resolve(n);
             }, this.minMovDelay);
           });
@@ -695,21 +691,21 @@
         trainingRandom: async function () {
           try {
             while (this.training) {
-              const n = await this._trainingRandom();
+              const n = await this.aPlayRandom();
+              if (this.finished) {
+                this.newGame();
+              }
+              this.trainingMovs++;
             }
           } catch (error) {
             console.log(error);
           }
         },
 
-        _trainingAI: function () {
+        aPlayAI: function () {
           return new Promise((resolve, reject) => {
             setTimeout(() => {
               const n = this.playAI();
-              if (this.finished) {
-                this.newGame();
-              }
-              this.trainingMovs++;
               resolve(n);
             }, this.minMovDelay);
           });
@@ -717,7 +713,11 @@
         trainingAI: async function () {
           try {
             while (this.training) {
-              const n = await this._trainingAI();
+              const n = await this.aPlayAI();
+              if (this.finished) {
+                this.newGame();
+              }
+              this.trainingMovs++;
             }
           } catch (error) {
             console.log(error);
