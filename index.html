@@ -195,9 +195,10 @@
               <d3-treemap :data="memory" width="100%" height="300"></d3-treemap>
             </div>
             <div class="col">
-              <d3-pack :data="memory" width="100%" height="300"></d3-pack>
+              <!-- <d3-pack :data="memory" width="100%" height="300"></d3-pack> -->
             </div>
           </div>
+          <pre>{{ memory }}</pre>
         </div>
 
       </div>
@@ -229,10 +230,7 @@
           if (typeof this.layout != 'function') {
             return null;
           }
-          const data = {
-            name: '/',
-            children: this.data
-          };
+          const data = this.data;
           const root = d3.hierarchy(data);
           this.layout(root);
           return root;
@@ -293,15 +291,12 @@
           if (typeof this.layout != 'function') {
             return null;
           }
-          const data = {
-            name: '/',
-            children: this.data,
-            value: 0
-          };
+          const data = this.data;
+          data.value = 0;
           const root = d3.hierarchy(data);
           root.sum(d => d.weight);
-          // console.log(root);
           this.layout(root);
+          console.log(root);
           return root;
         },
         nodes: function () {
@@ -357,11 +352,7 @@
           if (typeof this.layout != 'function') {
             return null;
           }
-          const data = {
-            name: '/',
-            children: this.data,
-            value: 0
-          };
+          const data = this.data;
           const root = d3.hierarchy(data);
           root.sum(d => d.weight);
           this.layout(root);
@@ -427,12 +418,10 @@
         ],
         game: [],
         available: null,
-        memory: [],
+        memory: null,
+        currentNode: null,
         winner: null,
         score: { x: 0, o: 0 },
-        gparentList: null,
-        parentList: null,
-        currentList: null,
         finished: false,
         training: false,
         trainingMovs: 0,
@@ -442,7 +431,15 @@
       },
       computed: {
       },
-      mounted: function () {
+      created: function () {
+        const rootNode = {
+          name: '/',
+          weight: 1,
+          children: [],
+        };
+        this.memory = rootNode;
+        this.currentNode = rootNode;
+
         this.newGame();
         this.winner = this.getWinner();
       },
@@ -486,20 +483,18 @@
         },
 
         saveInMemory: function (n) {
-          let list = this.currentList;
-          this.gparentList = this.parentList;
-          this.parentList = this.currentList;
-          const found = list.find(x => x.name === n);
+          const currentList = this.currentNode.children;
+          const found = currentList.find(item => item.name === n);
           if (found) {
-            this.currentList = found.children;
+            this.currentNode = found;
           } else {
-            const newItem = {
+            const newNode = {
               name: n,
-              weight: 1,
+              weigth: 1,
               children: []
             };
-            list.push(newItem);
-            this.currentList = newItem.children;
+            currentList.push(newNode);
+            this.currentNode = newNode;
           }
         },
         isGameFinished: function () {
@@ -509,17 +504,9 @@
           this.game = [];
           this.available = [...this.total];
           this.finished = false;
-          this.gparentList = this.memory;
-          this.parentList = this.memory;
-          this.currentList = this.memory;
+          this.currentNode = this.memory;
         },
         saveVictory: function (n) {
-          for (item of this.gparentList) {
-            item.weight /= 2;
-          }
-          for (item of this.parentList) {
-            item.weight *= 2;
-          }
           this.saveInMemory('*');
           this.finished = true;
         },
@@ -560,7 +547,7 @@
             return -1;
           }
           if (!this.isValid(n)) {
-            return n;
+            return -1;
           }
 
           this.addToGame(n);
@@ -595,7 +582,7 @@
           const n = this.chooseRandomNext();
 
           if (!this.isValid(n)) {
-            return n;
+            return -1;
           }
 
           this.addToGame(n);
@@ -623,11 +610,11 @@
           // los pesos multiplican las probabilidades de la opción
           // y hay que elegir al azar entre las opciones ya multiplicadas
           const weights = this.available.map(n => {
-            const found = this.currentList.find(m => m.name == n);
+            const found = this.currentNode.children.find(m => m.name === n);
             if (found) {
               return found.weight;
             } else {
-              return 1;
+              return 0;
             }
           });
           const weigthsSum = weights.reduce((ac, n) => ac += n, 0);
@@ -651,7 +638,7 @@
           const n = this.chooseAINext();
 
           if (!this.isValid(n)) {
-            return n;
+            return '1';
           }
 
           this.addToGame(n);
