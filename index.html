@@ -195,7 +195,7 @@
               <d3-treemap :data="memory" width="100%" height="300"></d3-treemap>
             </div>
             <div class="col">
-              <!-- <d3-pack :data="memory" width="100%" height="300"></d3-pack> -->
+              <d3-pack :data="memory" width="100%" height="300"></d3-pack>
             </div>
           </div>
           <pre>{{ memory }}</pre>
@@ -292,11 +292,10 @@
             return null;
           }
           const data = this.data;
-          data.value = 0;
           const root = d3.hierarchy(data);
           root.sum(d => d.weight);
           this.layout(root);
-          console.log(root);
+          // console.log(root);
           return root;
         },
         nodes: function () {
@@ -431,7 +430,7 @@
       },
       computed: {
       },
-      created: function () {
+      mounted: function () {
         const rootNode = {
           name: '/',
           weight: 1,
@@ -490,7 +489,7 @@
           } else {
             const newNode = {
               name: n,
-              weigth: 1,
+              weight: 1,
               children: []
             };
             currentList.push(newNode);
