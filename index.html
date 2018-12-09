@@ -132,19 +132,19 @@
               <table>
                 <tbody>
                   <tr>
-                    <td><button class="btn" :class="cellClassName(1)" @click="play(1)">1</button></td>
-                    <td><button class="btn" :class="cellClassName(2)" @click="play(2)">2</button></td>
-                    <td><button class="btn" :class="cellClassName(3)" @click="play(3)">3</button></td>
+                    <td><button class="btn" :class="cellClassName(1)" @click="playManual(1)">1</button></td>
+                    <td><button class="btn" :class="cellClassName(2)" @click="playManual(2)">2</button></td>
+                    <td><button class="btn" :class="cellClassName(3)" @click="playManual(3)">3</button></td>
                   </tr>
                   <tr>
-                    <td><button class="btn" :class="cellClassName(4)" @click="play(4)">4</button></td>
-                    <td><button class="btn" :class="cellClassName(5)" @click="play(5)">5</button></td>
-                    <td><button class="btn" :class="cellClassName(6)" @click="play(6)">6</button></td>
+                    <td><button class="btn" :class="cellClassName(4)" @click="playManual(4)">4</button></td>
+                    <td><button class="btn" :class="cellClassName(5)" @click="playManual(5)">5</button></td>
+                    <td><button class="btn" :class="cellClassName(6)" @click="playManual(6)">6</button></td>
                   </tr>
                   <tr>
-                    <td><button class="btn" :class="cellClassName(7)" @click="play(7)">7</button></td>
-                    <td><button class="btn" :class="cellClassName(8)" @click="play(8)">8</button></td>
-                    <td><button class="btn" :class="cellClassName(9)" @click="play(9)">9</button></td>
+                    <td><button class="btn" :class="cellClassName(7)" @click="playManual(7)">7</button></td>
+                    <td><button class="btn" :class="cellClassName(8)" @click="playManual(8)">8</button></td>
+                    <td><button class="btn" :class="cellClassName(9)" @click="playManual(9)">9</button></td>
                   </tr>
                 </tbody>
               </table>
@@ -155,8 +155,8 @@
               </div>
 
               <div class="buttons mt-2">
-                <button class="btn btn-info btn-sm" @click="startTrainingRandom" :disabled="training">Entrena Random</button>
-                <button class="btn btn-info btn-sm" @click="startTrainingAI" :disabled="training">Entrena AI</button>
+                <button class="btn btn-info btn-sm" @click="startTrainingRandom" :disabled="isTraining">Entrena Random</button>
+                <button class="btn btn-info btn-sm" @click="startTrainingAI" :disabled="isTraining">Entrena AI</button>
                 <div class="mt-1">
                   <span v-if="trainingMovs > 0">{{ trainingMovs }} movimientos</span>
                   <button class="btn btn-info btn-sm" @click="stopTraining">Detener entrenamiento</button>
@@ -422,7 +422,7 @@
         winner: null,
         score: { x: 0, o: 0 },
         finished: false,
-        training: false,
+        isTraining: false,
         trainingMovs: 0,
         minMovDelay: 1,
 
@@ -541,10 +541,13 @@
           return result;
         },
 
-        play: function (n) {
+        play: function(cb) {
           if (this.finished) {
             return -1;
           }
+
+          const n = cb();
+
           if (!this.isValid(n)) {
             return -1;
           }
@@ -561,6 +564,10 @@
           }
 
           return n;
+        },
+
+        playManual: function (n) {
+          return this.play(() => n);
         },
 
         chooseRandomNext: function () {
@@ -571,31 +578,11 @@
             return -1;
           }
           const r = Math.floor(available.length * Math.random());
-          return available[r];
+          const result = available[r];
+          return result;
         },
         playRandom: function () {
-          if (this.finished) {
-            return -1;
-          }
-
-          const n = this.chooseRandomNext();
-
-          if (!this.isValid(n)) {
-            return -1;
-          }
-
-          this.addToGame(n);
-
-          this.saveInMemory(n);
-
-          this.winner = this.getWinner();
-
-          if (this.winner.x.length > 0
-            || this.winner.o.length > 0) {
-            this.saveVictory(n);
-          }
-
-          return n;
+          return this.play(this.chooseRandomNext);
         },
 
         chooseAINext: function () {
@@ -613,101 +600,64 @@
             if (found) {
               return found.weight;
             } else {
-              return 0;
+              return 1;
             }
           });
           const weigthsSum = weights.reduce((ac, n) => ac += n, 0);
           const randomV = Math.random() * weigthsSum;
-          let choosed;
+          let result;
           for (let i = 0, w = 0; i < weights.length; i++) {
             w += weights[i];
             if (w > randomV) {
-              choosed = this.available[i];
+              result = this.available[i];
               break;
             }
           }
-          // console.log({ weigthsSum, randomV, choosed });
-          return choosed;
+          // console.log({ weigthsSum, randomV, result });
+          return result;
         },
         playAI: function () {
-          if (this.finished) {
-            return -1;
-          }
-
-          const n = this.chooseAINext();
-
-          if (!this.isValid(n)) {
-            return '1';
-          }
-
-          this.addToGame(n);
-
-          this.saveInMemory(n);
-
-          this.winner = this.getWinner();
-
-          if (this.winner.x.length > 0
-            || this.winner.o.length > 0) {
-            this.saveVictory(n);
-          }
-
-          return n;
+          return this.play(this.chooseAINext);
         },
 
+        aPlay: function(cb) {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              const n = cb();
+              resolve(n);
+            }, this.minMovDelay);
+          });
+        },
+        aPlayRandom: function () {
+          return this.aPlay(this.playRandom);
+        },
+        aPlayAI: function () {
+          return this.aPlay(this.playAI);
+        },
+        
+        training: async function (cb) {
+          try {
+            while (this.isTraining) {
+              const n = await cb();
+              if (this.finished) {
+                this.newGame();
+              }
+              this.trainingMovs++;
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        },
         startTrainingRandom: function () {
-          this.training = true;
-          this.trainingRandom();
+          this.isTraining = true;
+          this.training(this.aPlayRandom)
         },
         startTrainingAI: function () {
-          this.training = true;
-          this.trainingAI();
+          this.isTraining = true;
+          this.training(this.aPlayAI);
         },
         stopTraining: function () {
-          this.training = false;
-        },
-
-        aPlayRandom: function () {
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              const n = this.playRandom();
-              resolve(n);
-            }, this.minMovDelay);
-          });
-        },
-        trainingRandom: async function () {
-          try {
-            while (this.training) {
-              const n = await this.aPlayRandom();
-              if (this.finished) {
-                this.newGame();
-              }
-              this.trainingMovs++;
-            }
-          } catch (error) {
-            console.log(error);
-          }
-        },
-
-        aPlayAI: function () {
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              const n = this.playAI();
-              resolve(n);
-            }, this.minMovDelay);
-          });
-        },
-        trainingAI: async function () {
-          try {
-            while (this.training) {
-              const n = await this.aPlayAI();
-              if (this.finished) {
-                this.newGame();
-              }
-              this.trainingMovs++;
-            }
-          } catch (error) {
-            console.log(error);
-          }
+          this.isTraining = false;
         },
 
       },
