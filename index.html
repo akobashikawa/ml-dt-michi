@@ -173,11 +173,19 @@
               <h3>Juego</h3>
               <code>{{game}}</code>
 
+              <h4>Juego de X</h4>
+              <code>{{xgame}}</code>
+
+              <h4>Juego de O</h4>
+              <code>{{ogame}}</code>
+
               <h3>Disponible</h3>
               <code>{{available}}</code>
+              <br>
+              <code>{{weights}}</code>
 
               <h3>Ganador</h3>
-              <code>{{winner}}</code>
+              <code>{{goal}}</code>
               <code>{{score}}</code>
 
             </div>
@@ -415,8 +423,11 @@
           [4, 5, 6],
           [7, 8, 9],
         ],
+        goal: [],
         game: [],
-        available: null,
+        xgame: [],
+        ogame: [],
+        available: [],
         memory: null,
         currentNode: null,
         winner: null,
@@ -429,6 +440,17 @@
         layout: null,
       },
       computed: {
+        weights: function() {
+          const result = this.available.map(n => {
+            const found = this.currentNode.children.find(m => m.name === n);
+            if (found) {
+              return found.weight;
+            } else {
+              return 1;
+            }
+          });
+          return result;
+        }
       },
       mounted: function () {
         const rootNode = {
@@ -440,7 +462,6 @@
         this.currentNode = rootNode;
 
         this.newGame();
-        this.winner = this.getWinner();
       },
       methods: {
         pr: function (x) {
@@ -460,28 +481,39 @@
           let result = '';
           if (m % 2 === 0) {
             result += 'x';
+            if (this.goal.indexOf(n) != -1) {
+              result += ' winner-x';
+            }
           } else {
             result += 'o';
+            if (this.goal.indexOf(n) != -1) {
+              result += ' winner-o';
+            }
           }
 
-          if (this.winner.x.indexOf(n) != -1) {
-            result += ' winner-x';
-          }
-          if (this.winner.o.indexOf(n) != -1) {
-            result += ' winner-o';
-          }
           return result;
         },
 
         isValid: function (n) {
           return this.available.indexOf(n) != -1;
         },
+        
         addToGame: function (n) {
           this.available.splice(this.available.indexOf(n), 1);
+          if (this.game.length % 2 === 0) {
+            this.xgame.push(n);
+          } else {
+            this.ogame.push(n);
+          }
           this.game.push(n);
         },
 
         saveInMemory: function (n) {
+          this.goal = this.checkWinner();
+          if (this.goal.length !== 0) {
+            this.finished = true;
+          }
+
           const currentList = this.currentNode.children;
           const found = currentList.find(item => item.name === n);
           if (found) {
@@ -501,44 +533,27 @@
         },
         newGame: function () {
           this.game = [];
+          this.xgame = [];
+          this.ogame = [];
+          this.goal = [];
           this.available = [...this.total];
           this.finished = false;
           this.currentNode = this.memory;
         },
-        saveVictory: function (n) {
-          this.saveInMemory('*');
-          this.finished = true;
-        },
-        getWinner: function () {
-          const result = { x: [], o: [] };
-
-          // separa
-          const xs = [];
-          const os = [];
-          for (let i = 0; i < this.game.length; i++) {
-            const n = this.game[i];
-            if (i % 2 == 0) {
-              xs.push(n);
-            } else {
-              os.push(n);
-            }
-          }
-          // console.log(xs, os);
-
-          // coteja
+        checkWinner: function () {
           for (let goal of this.goals) {
             // quita del goal cada item presente en el juego
             // si lo que queda es vacio, entonces goal
-            if (goal.filter(n => xs.indexOf(n) == -1).length == 0) {
-              result.x.push(...goal);
+            if (goal.filter(n => this.xgame.indexOf(n) == -1).length == 0) {
               this.score.x++;
+              return goal;
             }
-            if (goal.filter(n => os.indexOf(n) == -1).length == 0) {
-              result.o.push(...goal);
+            if (goal.filter(n => this.ogame.indexOf(n) == -1).length == 0) {
               this.score.o++;
+              return goal;
             }
           }
-          return result;
+          return this.goal;
         },
 
         play: function(cb) {
@@ -555,13 +570,6 @@
           this.addToGame(n);
 
           this.saveInMemory(n);
-
-          this.winner = this.getWinner();
-
-          if (this.winner.x.length > 0
-            || this.winner.o.length > 0) {
-            this.saveVictory(n);
-          }
 
           return n;
         },
@@ -595,25 +603,19 @@
           // azar
           // los pesos multiplican las probabilidades de la opción
           // y hay que elegir al azar entre las opciones ya multiplicadas
-          const weights = this.available.map(n => {
-            const found = this.currentNode.children.find(m => m.name === n);
-            if (found) {
-              return found.weight;
-            } else {
-              return 1;
-            }
-          });
+          const weights = this.weights;
           const weigthsSum = weights.reduce((ac, n) => ac += n, 0);
-          const randomV = Math.random() * weigthsSum;
+          // es como caer al azar dentro de alguna de las zonas determinadas por sus pesos
+          const randomVal = Math.random() * weigthsSum;
+          // ahora, a qué valor habrá correspondido?
           let result;
           for (let i = 0, w = 0; i < weights.length; i++) {
             w += weights[i];
-            if (w > randomV) {
+            if (w > randomVal) {
               result = this.available[i];
               break;
             }
           }
-          // console.log({ weigthsSum, randomV, result });
           return result;
         },
         playAI: function () {
